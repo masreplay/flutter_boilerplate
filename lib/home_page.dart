@@ -2,6 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_boilerplate/api_client.dart';
 import 'package:flutter_boilerplate/async_snapshot_extension.dart';
 
+/// Keep track of current ui state, Loading | Data | Error | Idle
+///
+/// Example
+/// ```dart
+/// final mutation = ValueNotifier<AsyncSnapshot<List<Post>>>(
+///    AsyncSnapshot.nothing(),
+/// );
+/// ```
+class Mutation<T> extends ValueNotifier<AsyncSnapshot<T>> {
+  Mutation() : super(AsyncSnapshot.nothing());
+}
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -10,9 +22,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final mutation = ValueNotifier<AsyncSnapshot<List<Post>>>(
-    AsyncSnapshot.nothing(),
-  );
+  final mutation = Mutation<List<Post>>();
 
   @override
   void initState() {
