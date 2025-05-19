@@ -9,7 +9,8 @@ import 'package:flutter/material.dart';
 /// );
 /// ```
 class Mutation<T> extends ValueNotifier<AsyncSnapshot<T>> {
-  Mutation() : super(AsyncSnapshot.nothing());
+  Mutation({AsyncSnapshot<T>? initialValue})
+    : super(initialValue ?? AsyncSnapshot.nothing());
 
   Future<T> Function()? _future;
 
