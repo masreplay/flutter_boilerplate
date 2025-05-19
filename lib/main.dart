@@ -24,22 +24,49 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  AsyncSnapshot<List<Post>> _snapshot = AsyncSnapshot.nothing();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    try {
+      setState(() {
+        _snapshot = AsyncSnapshot.waiting();
+      });
+      final result = await ApiClient().getPosts();
+      setState(() {
+        _snapshot = AsyncSnapshot.withData(ConnectionState.done, result);
+      });
+    } catch (e, s) {
+      setState(() {
+        _snapshot = AsyncSnapshot.withError(ConnectionState.done, e, s);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: FutureBuilder(
-          future: ApiClient().getPosts(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator();
+        title: Builder(
+          builder: (context) {
+            switch (_snapshot.connectionState) {
+              case ConnectionState.waiting:
+                return const CircularProgressIndicator();
+              case ConnectionState.done:
+                if (_snapshot.hasError) {
+                  return const Text('Error');
+                }
+                return Text('Posts ${_snapshot.data?.length}');
+              case ConnectionState.none:
+                return const Text('No internet connection');
+              case ConnectionState.active:
+                return const Text('Active');
             }
-
-            if (snapshot.hasError) {
-              return const Text('Error');
-            }
-
-            return Text('Posts ${snapshot.data?.length}');
           },
         ),
         actions: [
@@ -47,22 +74,20 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Center(
-        child: FutureBuilder<List<Post>>(
-          future: ApiClient().getPosts(),
-          builder: (context, snapshot) {
-            switch (snapshot.connectionState) {
+        child: Builder(
+          builder: (context) {
+            switch (_snapshot.connectionState) {
               case ConnectionState.waiting:
                 return const CircularProgressIndicator();
               case ConnectionState.done:
-                if (snapshot.hasError) {
-                  print(snapshot.error);
+                if (_snapshot.hasError) {
                   return const Text('Error');
                 }
                 return ListView.builder(
-                  itemCount: snapshot.data?.length ?? 0,
-                  itemBuilder:
-                      (context, index) =>
-                          Text(snapshot.data?[index].title ?? ''),
+                  itemCount: _snapshot.data?.length ?? 0,
+                  itemBuilder: (context, index) {
+                    return Text(_snapshot.data?[index].title ?? '');
+                  },
                 );
 
               case ConnectionState.none:
