@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boilerplate/api_client.dart';
-import 'package:flutter_boilerplate/async_snapshot_extension.dart';
 import 'package:flutter_boilerplate/mutation.dart';
 
 class HomePage extends StatefulWidget {
