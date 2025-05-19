@@ -10,6 +10,7 @@ class HomePage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final mutation = useMutation<List<Post>>();
+    useMemoized(() => mutation.guard(ApiClient().getPosts));
 
     return Scaffold(
       appBar: AppBar(
