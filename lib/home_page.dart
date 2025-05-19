@@ -10,7 +10,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  AsyncSnapshot<List<Post>> _snapshot = AsyncSnapshot.nothing();
+  final mutation = ValueNotifier<AsyncSnapshot<List<Post>>>(
+    AsyncSnapshot.nothing(),
+  );
 
   @override
   void initState() {
@@ -20,19 +22,13 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchData() async {
     try {
-      setState(() {
-        _snapshot = AsyncSnapshot.waiting();
-      });
+      mutation.value = AsyncSnapshot.waiting();
 
       final result = await ApiClient().getPosts();
 
-      setState(() {
-        _snapshot = AsyncSnapshot.withData(ConnectionState.done, result);
-      });
+      mutation.value = AsyncSnapshot.withData(ConnectionState.done, result);
     } catch (e, s) {
-      setState(() {
-        _snapshot = AsyncSnapshot.withError(ConnectionState.done, e, s);
-      });
+      mutation.value = AsyncSnapshot.withError(ConnectionState.done, e, s);
     }
   }
 
@@ -40,14 +36,19 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: _snapshot.when(
-          idle: () => null,
-          loading: () => null,
-          data: (data) {
-            return Text('Posts ${data.length}');
-          },
-          error: (error, stackTrace) {
-            return const Text('No internet connection');
+        title: ValueListenableBuilder(
+          valueListenable: mutation,
+          builder: (context, value, child) {
+            return value.when(
+              idle: () => SizedBox(),
+              loading: () => SizedBox(),
+              data: (data) {
+                return Text('Posts ${data.length}');
+              },
+              error: (error, stackTrace) {
+                return const Text('No internet connection');
+              },
+            );
           },
         ),
 
@@ -56,19 +57,24 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Center(
-        child: _snapshot.when(
-          idle: () => SizedBox.shrink(),
-          loading: () => const CircularProgressIndicator(),
-          data: (data) {
-            return ListView.builder(
-              itemCount: data.length,
-              itemBuilder: (context, index) {
-                return Text(_snapshot.data?[index].title ?? '');
+        child: ValueListenableBuilder(
+          valueListenable: mutation,
+          builder: (context, value, child) {
+            return value.when(
+              idle: () => SizedBox.shrink(),
+              loading: () => const CircularProgressIndicator(),
+              data: (data) {
+                return ListView.builder(
+                  itemCount: data.length,
+                  itemBuilder: (context, index) {
+                    return Text(data[index].title);
+                  },
+                );
+              },
+              error: (error, stackTrace) {
+                return const Text('Error');
               },
             );
-          },
-          error: (error, stackTrace) {
-            return const Text('Error');
           },
         ),
       ),
