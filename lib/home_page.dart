@@ -12,6 +12,32 @@ import 'package:flutter_boilerplate/async_snapshot_extension.dart';
 /// ```
 class Mutation<T> extends ValueNotifier<AsyncSnapshot<T>> {
   Mutation() : super(AsyncSnapshot.nothing());
+
+  Future<T> Function()? _future;
+
+  bool get isRefreshable => _future != null;
+
+  Future<void> guard(Future<T> Function() futureCallback) async {
+    try {
+      value = AsyncSnapshot.waiting();
+
+      final T result = await futureCallback();
+
+      _future = futureCallback;
+
+      value = AsyncSnapshot.withData(ConnectionState.done, result);
+    } catch (e, s) {
+      value = AsyncSnapshot.withError(ConnectionState.done, e, s);
+    }
+  }
+
+  Future<void> refresh() {
+    if (_future == null) {
+      return Future.value();
+    }
+
+    return guard(_future!);
+  }
 }
 
 class HomePage extends StatefulWidget {
@@ -27,19 +53,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _fetchData();
-  }
-
-  Future<void> _fetchData() async {
-    try {
-      mutation.value = AsyncSnapshot.waiting();
-
-      final result = await ApiClient().getPosts();
-
-      mutation.value = AsyncSnapshot.withData(ConnectionState.done, result);
-    } catch (e, s) {
-      mutation.value = AsyncSnapshot.withError(ConnectionState.done, e, s);
-    }
+    mutation.guard(ApiClient().getPosts);
   }
 
   @override
@@ -63,7 +77,17 @@ class _HomePageState extends State<HomePage> {
         ),
 
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.refresh)),
+          ValueListenableBuilder(
+            valueListenable: mutation,
+            builder: (context, value, child) {
+              return mutation.isRefreshable
+                  ? IconButton(
+                    onPressed: mutation.refresh,
+                    icon: const Icon(Icons.refresh),
+                  )
+                  : const SizedBox.shrink();
+            },
+          ),
         ],
       ),
       body: Center(
