@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 typedef MutationCallback<T> = Future<T> Function();
 
 /// Keep track of current ui state, Loading | Data | Error | Idle
@@ -22,7 +21,7 @@ class Mutation<T> extends ValueNotifier<AsyncSnapshot<T>> {
   // is refreshing
   bool get isRefreshing => value.connectionState == ConnectionState.waiting;
 
-  Future<void> guard(MutationCallback<T> futureCallback) async {
+  Future<AsyncSnapshot<T>> guard(MutationCallback<T> futureCallback) async {
     try {
       value = AsyncSnapshot.waiting();
 
@@ -30,9 +29,9 @@ class Mutation<T> extends ValueNotifier<AsyncSnapshot<T>> {
 
       _future = futureCallback;
 
-      value = AsyncSnapshot.withData(ConnectionState.done, result);
+      return value = AsyncSnapshot.withData(ConnectionState.done, result);
     } catch (e, s) {
-      value = AsyncSnapshot.withError(ConnectionState.done, e, s);
+      return value = AsyncSnapshot.withError(ConnectionState.done, e, s);
     }
   }
 

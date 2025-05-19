@@ -9,7 +9,7 @@ class HomePage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutation = useMutation.riverpod(ApiClient().getPosts);
+    final mutation = useMutation();
 
     return Scaffold(
       appBar: AppBar(
@@ -33,22 +33,52 @@ class HomePage extends HookWidget {
               : const SizedBox.shrink(),
         ],
       ),
-      body: Center(
-        child: mutation.value.when(
-          idle: () => SizedBox.shrink(),
-          loading: () => const CircularProgressIndicator(),
-          data: (data) {
-            return ListView.builder(
-              itemCount: data.length,
-              itemBuilder: (context, index) {
-                return Text(data[index].title);
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FilledButton(
+            onPressed: () async {
+              final result = await mutation.guard(() {
+                return ApiClient().addPost(
+                  Post(id: 0, title: 'Test', body: 'Test'),
+                );
+              });
+
+              result.when(
+                idle: () {},
+                loading: () {},
+                data: (data) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Post added')));
+                },
+                error: (error, stackTrace) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Error')));
+                },
+              );
+            },
+            child: const Text('Fetch'),
+          ),
+          Expanded(
+            child: mutation.value.when(
+              idle: () => SizedBox.shrink(),
+              loading: () => Center(child: const CircularProgressIndicator()),
+              data: (data) {
+                return ListView.builder(
+                  itemCount: data.length,
+                  itemBuilder: (context, index) {
+                    return Text(data[index].title);
+                  },
+                );
               },
-            );
-          },
-          error: (error, stackTrace) {
-            return const Text('Error');
-          },
-        ),
+              error: (error, stackTrace) {
+                return const Text('Error');
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

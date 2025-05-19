@@ -21,6 +21,16 @@ class ApiClient {
             .toList();
     return posts;
   }
+
+  Future<Post> addPost(Post post) async {
+    // await Future.delayed(const Duration(seconds: 1));
+    // if (Random().nextBool()) {
+    //   throw Exception('Error');
+    // }
+
+    final response = await _dio.post('$_baseUrl/posts', data: post);
+    return Post.fromJson(response.data as Map<String, dynamic>);
+  }
 }
 
 class Post {
